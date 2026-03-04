@@ -1,0 +1,107 @@
+<youpez-content-simple [mainTitle]="claim ? 'Claim Detail #' + claim.id : 'Loading...'">
+    <div class="notification-container mb-2"></div>
+  
+    <div class="mb-4">
+      <button ibmButton="secondary" size="sm" (click)="goBack()">
+        <youpez-ibm-icon iconName="arrowLeft" iconSize="16" class="mr-2"></youpez-ibm-icon>
+        Back to Claims List
+      </button>
+    </div>
+  
+    <div *ngIf="claim" fxLayout="row wrap" fxLayoutGap="20px">
+      
+      <div fxFlex="100%" fxFlex.gt-md="60%">
+        
+        <div class="bg-white p-5 shadow-sm border-radius-4 mb-4">
+          <div fxLayout="row" fxLayoutAlign="space-between center" class="mb-4">
+             <h3 style="margin: 0;">{{ claim.subject }}</h3>
+             <ibm-tag [type]="claim.status === 'RESOLVED' ? 'green' : (claim.status === 'RETAKE_AUTHORIZED' ? 'teal' : 'blue')">
+               {{ claim.status }}
+             </ibm-tag>
+          </div>
+          
+          <label class="bx--label">Claim Type: {{ claim.type }}</label>
+          <div class="p-3 mb-4" style="background: #f4f4f4; border-left: 4px solid #0f62fe;">
+            <p style="white-space: pre-wrap; font-size: 14px;">{{ claim.description }}</p>
+          </div>
+          <p class="text-muted" style="font-size: 12px;">Created on {{ claim.createdAt | date:'medium' }}</p>
+        </div>
+  
+        <div *ngIf="claim.status === 'RETAKE_AUTHORIZED' && !claim.retakeRequest" 
+             class="bg-white p-5 shadow-sm border-radius-4" 
+             style="border-top: 4px solid #24a148;">
+          <h4 class="mb-3" style="color: #198038;">Retake Authorized</h4>
+          <p class="mb-4 text-muted">The administration has approved your request for a retake. Please specify the exam details and attach your justification.</p>
+          
+          <div class="bx--form-item mb-4">
+            <label class="bx--label">Exam Name</label>
+            <input [(ngModel)]="retakeDetails.courseName" type="text" class="bx--text-input" placeholder="e.g. Mathematics Level 2 Final">
+          </div>
+  
+          <div class="bx--form-item mb-4">
+            <label class="bx--label">Reason / Justification</label>
+            <textarea [(ngModel)]="retakeDetails.reason" class="bx--text-area" rows="3" placeholder="Confirm your reason for the record..."></textarea>
+          </div>
+  
+          <div class="bx--form-item mb-5">
+            <label class="bx--label">Supporting Document (Required)</label>
+            <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="10px">
+              <label class="bx--btn bx--btn--secondary bx--btn--sm" style="cursor: pointer;">
+                <span>Add File +</span>
+                <input type="file" (change)="onFileSelected($event)" style="display: none;" accept=".pdf,.png,.jpg,.jpeg">
+              </label>
+              <span *ngIf="selectedFile" style="font-size: 13px; color: #24a148; font-weight: 500;">
+                <youpez-ibm-icon iconName="checkmark" iconSize="14" class="mr-1"></youpez-ibm-icon>
+                {{ selectedFile.name }}
+              </span>
+            </div>
+          </div>
+  
+          <button ibmButton="primary" (click)="submitRetake()">Submit Official Request</button>
+        </div>
+  
+        <div *ngIf="claim.retakeRequest" class="bg-white p-5 shadow-sm border-radius-4" style="border-top: 4px solid #0f62fe;">
+          <h4 class="mb-4" style="color: #0f62fe;">Linked Retake Application</h4>
+          
+          <div fxLayout="row wrap" fxLayoutGap="40px" class="mb-4">
+            <div>
+              <label class="bx--label">Exam Name</label>
+              <p><strong>{{ claim.retakeRequest.courseName }}</strong></p>
+            </div>
+            <div>
+              <label class="bx--label">Retake Status</label>
+              <div>
+                <ibm-tag type="magenta">{{ claim.retakeRequest.status }}</ibm-tag>
+              </div>
+            </div>
+          </div>
+  
+          <label class="bx--label">Reason Provided</label>
+          <p class="mb-4">{{ claim.retakeRequest.reason }}</p>
+          
+          <div *ngIf="claim.retakeRequest.attachmentPath" class="p-3" style="background: #f4f4f4; border-radius: 4px;">
+             <label class="bx--label" style="display: block; margin-bottom: 5px;">Attached Document</label>
+             <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="10px">
+               <youpez-ibm-icon iconName="document" iconSize="20" style="fill: #0f62fe;"></youpez-ibm-icon>
+               <span style="font-size: 13px;">{{ claim.retakeRequest.attachmentPath }}</span>
+             </div>
+          </div>
+        </div>
+      </div>
+  
+      <div fxFlex="100%" fxFlex.gt-md="35%">
+        <div class="bg-white p-4 shadow-sm border-radius-4">
+          <label class="bx--label">Student Reference</label>
+          <p class="mb-4">Student ID: #{{ claim.student?.id || 'N/A' }}</p>
+          
+          <div *ngIf="claim.status === 'OPEN'" class="p-3" style="background: #e5f6ff; border-radius: 4px;">
+             <p style="font-size: 13px; margin-bottom: 0;">
+               <youpez-ibm-icon iconName="information" iconSize="16" class="mr-2"></youpez-ibm-icon>
+               This claim is currently waiting for administrative review.
+             </p>
+          </div>
+        </div>
+      </div>
+  
+    </div>
+  </youpez-content-simple>
