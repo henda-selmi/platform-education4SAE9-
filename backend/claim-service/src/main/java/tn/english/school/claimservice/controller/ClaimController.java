@@ -24,7 +24,10 @@ public class ClaimController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Claim>> getAllClaims() {
+    public ResponseEntity<List<Claim>> getAllClaims(@RequestParam(required = false) Long studentId) {
+        if (studentId != null) {
+            return ResponseEntity.ok(claimService.getClaimsByStudentId(studentId));
+        }
         return ResponseEntity.ok(claimService.getAllClaims());
     }
 
