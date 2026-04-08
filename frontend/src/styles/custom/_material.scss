@@ -1,0 +1,25 @@
+/** Custom Material styles */
+
+.status-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+mat-card {
+  margin-bottom: var(--gutter);
+}
+
+mat-card-header + mat-card-content {
+  margin-top: var(--gutter);
+}
+
+.form-field-full {
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+}

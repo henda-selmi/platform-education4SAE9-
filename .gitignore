@@ -1,0 +1,18 @@
+# Dossier à ignorer spécifiquement
+other/
+
+# Frontend (Angular)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.vscode/
+
+# Backend (Spring Boot)
+backend/target/
+backend/.idea/
+backend/*.iml
+backend/uploads/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
