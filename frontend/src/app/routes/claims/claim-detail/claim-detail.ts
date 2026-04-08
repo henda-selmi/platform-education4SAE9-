@@ -15,7 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeader } from '@shared';
 import { AuthService } from '@core/authentication';
 import { ClaimService } from '../claim.service';
-import { Claim } from '../claim.model';
+import { Claim, Message } from '../claim.model';
 
 @Component({
   selector: 'app-claim-detail',
@@ -54,6 +54,20 @@ export class ClaimDetail implements OnInit {
   submitting = false;
   authorizing = false;
 
+  // Document verification
+  showRejectInput = false;
+  rejectReason = '';
+  resubmitFile: File | null = null;
+  verifying = false;
+
+  // Messaging
+  messages: Message[] = [];
+  newMessage = '';
+  sendingMessage = false;
+  currentUserId: number | null = null;
+  currentUserName = '';
+  currentUserRole: 'ADMIN' | 'STUDENT' = 'STUDENT';
+
   readonly typeLabels: Record<string, string> = {
     TECHNICAL: 'Technical',
     PEDAGOGICAL: 'Pedagogical',
@@ -73,6 +87,9 @@ export class ClaimDetail implements OnInit {
   ngOnInit() {
     this.authService.user().subscribe(user => {
       this.isAdmin = user.roles?.includes('ADMIN') ?? false;
+      this.currentUserId = user.id ? Number(user.id) : null;
+      this.currentUserName = user.name || '';
+      this.currentUserRole = this.isAdmin ? 'ADMIN' : 'STUDENT';
       this.cdr.markForCheck();
     });
 
@@ -89,6 +106,7 @@ export class ClaimDetail implements OnInit {
     this.claimService.getClaimById(id).subscribe({
       next: data => {
         this.claim = data;
+        this.loadMessages(id);
         if (data.retakeRequestId) {
           this.claimService.getRetakeRequestById(data.retakeRequestId).subscribe({
             next: retake => {
@@ -107,6 +125,39 @@ export class ClaimDetail implements OnInit {
         }
       },
       error: () => this.goBack(),
+    });
+  }
+
+  loadMessages(claimId: number) {
+    this.claimService.getMessages(claimId).subscribe({
+      next: msgs => {
+        this.messages = msgs;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  sendMessage() {
+    if (!this.newMessage.trim() || !this.claim?.id || !this.currentUserId) return;
+    this.sendingMessage = true;
+    const message: Partial<Message> = {
+      senderId: this.currentUserId,
+      senderName: this.currentUserName,
+      senderRole: this.currentUserRole,
+      content: this.newMessage.trim(),
+    };
+    this.claimService.sendMessage(this.claim.id, message).subscribe({
+      next: msg => {
+        this.messages = [...this.messages, msg];
+        this.newMessage = '';
+        this.sendingMessage = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.sendingMessage = false;
+        this.snackBar.open('Failed to send message.', 'Close', { duration: 3000 });
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -229,6 +280,56 @@ export class ClaimDetail implements OnInit {
       DENIED:   { background: 'rgba(239,68,68,0.18)',  color: '#dc2626', border: '1.5px solid rgba(239,68,68,0.6)' },
     };
     return map[status] ?? { background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' };
+  }
+
+  validateDocument() {
+    if (!this.claim?.retakeRequest?.id) return;
+    this.verifying = true;
+    this.claimService.validateDocument(this.claim.retakeRequest.id).subscribe({
+      next: updated => {
+        this.claim!.retakeRequest = updated;
+        this.verifying = false;
+        this.snackBar.open('Document marked as valid.', 'Close', { duration: 3000 });
+        this.cdr.markForCheck();
+      },
+      error: () => { this.verifying = false; this.cdr.markForCheck(); },
+    });
+  }
+
+  rejectDocument() {
+    if (!this.claim?.retakeRequest?.id || !this.rejectReason.trim()) return;
+    this.verifying = true;
+    this.claimService.rejectDocument(this.claim.retakeRequest.id, this.rejectReason.trim()).subscribe({
+      next: updated => {
+        this.claim!.retakeRequest = updated;
+        this.verifying = false;
+        this.showRejectInput = false;
+        this.rejectReason = '';
+        this.snackBar.open('Document rejected. Student will be notified.', 'Close', { duration: 3000 });
+        this.cdr.markForCheck();
+      },
+      error: () => { this.verifying = false; this.cdr.markForCheck(); },
+    });
+  }
+
+  onResubmitFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) this.resubmitFile = input.files[0];
+  }
+
+  resubmitDocument() {
+    if (!this.claim?.retakeRequest?.id || !this.resubmitFile) return;
+    this.verifying = true;
+    this.claimService.resubmitDocument(this.claim.retakeRequest.id, this.resubmitFile).subscribe({
+      next: updated => {
+        this.claim!.retakeRequest = updated;
+        this.resubmitFile = null;
+        this.verifying = false;
+        this.snackBar.open('Document resubmitted successfully.', 'Close', { duration: 3000 });
+        this.cdr.markForCheck();
+      },
+      error: () => { this.verifying = false; this.cdr.markForCheck(); },
+    });
   }
 
   goBack() {

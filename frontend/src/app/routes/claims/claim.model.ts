@@ -1,3 +1,13 @@
+export interface Message {
+  id?: number;
+  claimId?: number;
+  senderId: number;
+  senderName: string;
+  senderRole: 'ADMIN' | 'STUDENT';
+  content: string;
+  createdAt?: string;
+}
+
 export interface RetakeRequest {
   id?: number;
   courseName: string;
@@ -7,6 +17,8 @@ export interface RetakeRequest {
   claimId?: number;
   studentId?: number;
   requestDate?: string;
+  documentStatus?: 'PENDING_REVIEW' | 'VALID' | 'INVALID';
+  documentRejectionReason?: string;
 }
 
 export interface Student {
