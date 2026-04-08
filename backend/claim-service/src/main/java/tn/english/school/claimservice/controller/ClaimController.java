@@ -55,7 +55,7 @@ public class ClaimController {
     }
 
     // Called internally by retake-service to link a retake request back to this claim
-    @PatchMapping("/{claimId}/link-retake/{retakeRequestId}")
+    @PutMapping("/{claimId}/link-retake/{retakeRequestId}")
     public ResponseEntity<Claim> linkRetakeRequest(
             @PathVariable Long claimId,
             @PathVariable Long retakeRequestId) {

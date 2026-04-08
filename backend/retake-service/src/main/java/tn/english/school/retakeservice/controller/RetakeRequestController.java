@@ -1,14 +1,23 @@
 package tn.english.school.retakeservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.english.school.retakeservice.entity.RetakeRequest;
+import tn.english.school.retakeservice.enums.RequestStatus;
 import tn.english.school.retakeservice.service.RetakeRequestService;
 
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -18,6 +27,9 @@ import java.util.List;
 public class RetakeRequestController {
 
     private final RetakeRequestService retakeRequestService;
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     @PostMapping(value = "/from-claim/{claimId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RetakeRequest> createRetakeFromClaim(
@@ -46,9 +58,42 @@ public class RetakeRequestController {
         return ResponseEntity.ok(retakeRequestService.updateRequest(id, retakeRequest));
     }
 
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<RetakeRequest> approveRequest(@PathVariable Long id) {
+        return ResponseEntity.ok(retakeRequestService.approveOrDenyRequest(id, RequestStatus.APPROVED));
+    }
+
+    @PatchMapping("/{id}/deny")
+    public ResponseEntity<RetakeRequest> denyRequest(@PathVariable Long id) {
+        return ResponseEntity.ok(retakeRequestService.approveOrDenyRequest(id, RequestStatus.DENIED));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
         retakeRequestService.deleteRequest(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/attachments/{filename:.+}")
+    public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
