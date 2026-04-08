@@ -8,6 +8,7 @@ import tn.english.school.retakeservice.dto.ClaimDTO;
 import tn.english.school.retakeservice.entity.RetakeRequest;
 import tn.english.school.retakeservice.exception.ClaimAlreadyLinkedException;
 import tn.english.school.retakeservice.exception.InvalidRetakeException;
+import tn.english.school.retakeservice.enums.RequestStatus;
 import tn.english.school.retakeservice.repository.RetakeRequestRepository;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class RetakeRequestService {
     public RetakeRequest updateRequest(Long id, RetakeRequest updatedRequest) {
         RetakeRequest existing = getRequestById(id);
 
-        // Fetch the linked claim via Feign to enforce the same business rule
+        // Only allow editing details (courseName, reason) when the claim is still OPEN
         ClaimDTO claim = claimClient.getClaimById(existing.getClaimId());
         if (!"OPEN".equals(claim.getStatus())) {
             throw new IllegalStateException(
@@ -41,6 +42,18 @@ public class RetakeRequestService {
 
         existing.setCourseName(updatedRequest.getCourseName());
         existing.setReason(updatedRequest.getReason());
+        return retakeRequestRepository.save(existing);
+    }
+
+    public RetakeRequest approveOrDenyRequest(Long id, RequestStatus decision) {
+        RetakeRequest existing = getRequestById(id);
+
+        if (existing.getStatus() != RequestStatus.PENDING) {
+            throw new IllegalStateException(
+                    "Action denied: This retake request has already been " + existing.getStatus().toString().toLowerCase() + ".");
+        }
+
+        existing.setStatus(decision);
         return retakeRequestRepository.save(existing);
     }
 
