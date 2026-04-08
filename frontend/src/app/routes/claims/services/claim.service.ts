@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '@env/environment';
-import { Claim, Message, RetakeRequest } from './claim.model';
+import { Claim, Message, RetakeRequest } from '../models/claim.model';
 
 @Injectable({ providedIn: 'root' })
 export class ClaimService {
@@ -92,6 +92,10 @@ export class ClaimService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.patch<RetakeRequest>(`${this.retakeApi}/retake-requests/${retakeId}/resubmit-document`, formData);
+  }
+
+  draftResponse(claimId: number) {
+    return this.http.get<{ draft: string }>(`${this.claimApi}/claims/${claimId}/draft-response`);
   }
 
   getMessages(claimId: number) {

@@ -14,12 +14,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeader } from '@shared';
 import { AuthService } from '@core/authentication';
-import { ClaimService } from '../claim.service';
-import { Claim, Message } from '../claim.model';
+import { ClaimService } from '../services/claim.service';
+import { Claim, Message } from '../models/claim.model';
 
 @Component({
   selector: 'app-claim-detail',
-  templateUrl: './claim-detail.html',
+  templateUrl: './claim-detail.component.html',
+  styleUrl: './claim-detail.component.scss',
   imports: [
     CommonModule,
     NgStyle,
@@ -36,7 +37,7 @@ import { Claim, Message } from '../claim.model';
     PageHeader,
   ],
 })
-export class ClaimDetail implements OnInit {
+export class ClaimDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly claimService = inject(ClaimService);
@@ -64,6 +65,7 @@ export class ClaimDetail implements OnInit {
   messages: Message[] = [];
   newMessage = '';
   sendingMessage = false;
+  drafting = false;
   currentUserId: number | null = null;
   currentUserName = '';
   currentUserRole: 'ADMIN' | 'STUDENT' = 'STUDENT';
@@ -132,6 +134,23 @@ export class ClaimDetail implements OnInit {
     this.claimService.getMessages(claimId).subscribe({
       next: msgs => {
         this.messages = msgs;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  draftResponse() {
+    if (!this.claim?.id) return;
+    this.drafting = true;
+    this.claimService.draftResponse(this.claim.id).subscribe({
+      next: res => {
+        this.newMessage = res.draft;
+        this.drafting = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.drafting = false;
+        this.snackBar.open('AI draft unavailable, please write your response manually.', 'Close', { duration: 3000 });
         this.cdr.markForCheck();
       },
     });

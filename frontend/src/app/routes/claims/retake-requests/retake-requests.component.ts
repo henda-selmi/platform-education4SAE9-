@@ -14,12 +14,13 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeader } from '@shared';
 import { AuthService } from '@core/authentication';
-import { ClaimService } from '../claim.service';
-import { RetakeRequest } from '../claim.model';
+import { ClaimService } from '../services/claim.service';
+import { RetakeRequest } from '../models/claim.model';
 
 @Component({
   selector: 'app-retake-requests',
-  templateUrl: './retake-requests.html',
+  templateUrl: './retake-requests.component.html',
+  styleUrl: './retake-requests.component.scss',
   imports: [
     CommonModule,
     NgStyle,
@@ -38,7 +39,7 @@ import { RetakeRequest } from '../claim.model';
     PageHeader,
   ],
 })
-export class RetakeRequests implements OnInit, AfterViewInit {
+export class RetakeRequestsComponent implements OnInit, AfterViewInit {
   private readonly claimService = inject(ClaimService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);

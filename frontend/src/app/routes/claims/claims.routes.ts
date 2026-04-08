@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { ClaimsList } from './claims-list/claims-list';
-import { ClaimDetail } from './claim-detail/claim-detail';
-import { RetakeRequests } from './retake-requests/retake-requests';
+import { ClaimsListComponent } from './claims-list/claims-list.component';
+import { ClaimDetailComponent } from './claim-detail/claim-detail.component';
+import { RetakeRequestsComponent } from './retake-requests/retake-requests.component';
 
 export const routes: Routes = [
-  { path: '', component: ClaimsList },
-  { path: 'retake-requests', component: RetakeRequests },
-  { path: ':id', component: ClaimDetail },
+  { path: '', component: ClaimsListComponent },
+  { path: 'retake-requests', component: RetakeRequestsComponent },
+  { path: ':id', component: ClaimDetailComponent },
 ];
