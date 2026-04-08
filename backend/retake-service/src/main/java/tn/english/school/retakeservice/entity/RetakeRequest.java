@@ -3,6 +3,7 @@ package tn.english.school.retakeservice.entity;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
+import tn.english.school.retakeservice.enums.DocumentStatus;
 import tn.english.school.retakeservice.enums.RequestStatus;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,11 @@ public class RetakeRequest {
 
     private String attachmentPath;
 
+    @Enumerated(EnumType.STRING)
+    private DocumentStatus documentStatus;
+
+    private String documentRejectionReason;
+
     @PrePersist
     protected void onCreate() {
         if (this.requestDate == null) {
@@ -39,6 +45,9 @@ public class RetakeRequest {
         }
         if (this.status == null) {
             this.status = RequestStatus.PENDING;
+        }
+        if (this.documentStatus == null && this.attachmentPath != null) {
+            this.documentStatus = DocumentStatus.PENDING_REVIEW;
         }
     }
 }

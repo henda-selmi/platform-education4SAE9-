@@ -8,6 +8,7 @@ import tn.english.school.retakeservice.dto.ClaimDTO;
 import tn.english.school.retakeservice.entity.RetakeRequest;
 import tn.english.school.retakeservice.exception.ClaimAlreadyLinkedException;
 import tn.english.school.retakeservice.exception.InvalidRetakeException;
+import tn.english.school.retakeservice.enums.DocumentStatus;
 import tn.english.school.retakeservice.enums.RequestStatus;
 import tn.english.school.retakeservice.repository.RetakeRequestRepository;
 
@@ -100,5 +101,36 @@ public class RetakeRequestService {
         claimClient.linkRetakeRequest(claimId, saved.getId());
 
         return saved;
+    }
+
+    public RetakeRequest validateDocument(Long id) {
+        RetakeRequest existing = getRequestById(id);
+        if (existing.getAttachmentPath() == null) {
+            throw new IllegalStateException("No document attached to this request.");
+        }
+        existing.setDocumentStatus(DocumentStatus.VALID);
+        existing.setDocumentRejectionReason(null);
+        return retakeRequestRepository.save(existing);
+    }
+
+    public RetakeRequest rejectDocument(Long id, String reason) {
+        RetakeRequest existing = getRequestById(id);
+        if (existing.getAttachmentPath() == null) {
+            throw new IllegalStateException("No document attached to this request.");
+        }
+        existing.setDocumentStatus(DocumentStatus.INVALID);
+        existing.setDocumentRejectionReason(reason);
+        return retakeRequestRepository.save(existing);
+    }
+
+    public RetakeRequest resubmitDocument(Long id, MultipartFile newFile) {
+        RetakeRequest existing = getRequestById(id);
+        if (existing.getDocumentStatus() != DocumentStatus.INVALID) {
+            throw new IllegalStateException("Document resubmission is only allowed when the document was rejected.");
+        }
+        existing.setAttachmentPath(fileStorageService.storeFile(newFile));
+        existing.setDocumentStatus(DocumentStatus.PENDING_REVIEW);
+        existing.setDocumentRejectionReason(null);
+        return retakeRequestRepository.save(existing);
     }
 }
