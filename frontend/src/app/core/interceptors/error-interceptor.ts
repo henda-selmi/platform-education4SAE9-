@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpHandlerFn, HttpRequest } from '@angular/common/h
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HotToastService } from '@ngxpert/hot-toast';
+import { TokenService } from '@core/authentication';
 import { catchError, throwError } from 'rxjs';
 
 export enum STATUS {
@@ -14,7 +15,8 @@ export enum STATUS {
 export function errorInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn) {
   const router = inject(Router);
   const toast = inject(HotToastService);
-  const errorPages = [STATUS.FORBIDDEN, STATUS.NOT_FOUND, STATUS.INTERNAL_SERVER_ERROR];
+  const tokenService = inject(TokenService);
+  const errorPages = [STATUS.NOT_FOUND, STATUS.INTERNAL_SERVER_ERROR];
 
   const getMessage = (error: HttpErrorResponse) => {
     if (error.error?.message) {
@@ -28,16 +30,16 @@ export function errorInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn)
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (errorPages.includes(error.status)) {
-        router.navigateByUrl(`/${error.status}`, {
-          skipLocationChange: true,
-        });
+      const isAuthRequest = req.url.includes('/user') || req.url.includes('/auth/');
+      if ((error.status === STATUS.UNAUTHORIZED || error.status === STATUS.FORBIDDEN) && isAuthRequest) {
+        // Invalid / expired token on an auth endpoint — clear it and go to login
+        tokenService.clear();
+        router.navigateByUrl('/auth/login');
+      } else if (errorPages.includes(error.status)) {
+        router.navigateByUrl(`/${error.status}`, { skipLocationChange: true });
       } else {
         console.error('ERROR', error);
         toast.error(getMessage(error));
-        if (error.status === STATUS.UNAUTHORIZED) {
-          router.navigateByUrl('/auth/login');
-        }
       }
 
       return throwError(() => error);
