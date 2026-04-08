@@ -52,6 +52,7 @@ export class ClaimsList implements OnInit, AfterViewInit {
   private readonly authService = inject(AuthService);
 
   isAdmin = false;
+  currentUserId: number | undefined;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -95,9 +96,10 @@ export class ClaimsList implements OnInit, AfterViewInit {
   ngOnInit() {
     this.authService.user().subscribe(user => {
       this.isAdmin = user.roles?.includes('ADMIN') ?? false;
+      this.currentUserId = user.id ? Number(user.id) : undefined;
+      this.loadClaims();
       this.cdr.markForCheck();
     });
-    this.loadClaims();
     this.dataSource.filterPredicate = (data: Claim, filter: string) => {
       const { search, status, type } = JSON.parse(filter);
       const matchSearch = !search ||
@@ -116,7 +118,8 @@ export class ClaimsList implements OnInit, AfterViewInit {
 
   loadClaims() {
     this.loading = true;
-    this.claimService.getAllClaims().subscribe({
+    const studentId = this.isAdmin ? undefined : this.currentUserId;
+    this.claimService.getAllClaims(studentId).subscribe({
       next: data => {
         this.dataSource.data = data;
         this.loading = false;

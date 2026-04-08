@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { take } from 'rxjs';
 import { ClaimService } from '../claim.service';
+import { AuthService, User } from '@core/authentication';
 
 @Component({
   selector: 'app-new-claim-dialog',
@@ -37,7 +39,8 @@ import { ClaimService } from '../claim.service';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-raised-button color="primary" (click)="submit()" [disabled]="submitting || !subject || !type || !description">
+      <button mat-raised-button color="primary" (click)="submit()"
+              [disabled]="submitting || !subject || !type || !description || !currentUser?.id">
         <mat-spinner *ngIf="submitting" diameter="18" style="display:inline-block;margin-right:6px;"></mat-spinner>
         Submit
       </button>
@@ -55,21 +58,40 @@ import { ClaimService } from '../claim.service';
     MatSnackBarModule,
   ],
 })
-export class NewClaimDialog {
+export class NewClaimDialog implements OnInit {
   private readonly claimService = inject(ClaimService);
+  private readonly authService = inject(AuthService);
   private readonly dialogRef = inject(MatDialogRef<NewClaimDialog>);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly cdr = inject(ChangeDetectorRef);
 
+  currentUser: User | null = null;
   subject = '';
   type: 'TECHNICAL' | 'PEDAGOGICAL' | 'ADMINISTRATIVE' | 'OTHER' | '' = '';
   description = '';
   submitting = false;
 
+  ngOnInit() {
+    this.authService.user().pipe(take(1)).subscribe(user => {
+      this.currentUser = user;
+      this.cdr.detectChanges();
+    });
+  }
+
   submit() {
-    if (!this.subject || !this.type || !this.description) return;
+    if (!this.subject || !this.type || !this.description || !this.currentUser?.id) return;
     this.submitting = true;
+
+    const nameParts = (this.currentUser.name || '').split(' ');
+    const student = {
+      id: Number(this.currentUser.id),
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+      email: this.currentUser.email || '',
+    };
+
     this.claimService
-      .createClaim({ subject: this.subject, type: this.type as any, description: this.description, status: 'OPEN' })
+      .createClaim({ subject: this.subject, type: this.type as any, description: this.description, status: 'OPEN', student })
       .subscribe({
         next: () => {
           this.snackBar.open('Claim submitted successfully.', 'Close', { duration: 3000 });
