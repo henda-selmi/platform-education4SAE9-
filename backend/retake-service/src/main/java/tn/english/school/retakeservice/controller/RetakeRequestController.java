@@ -74,6 +74,23 @@ public class RetakeRequestController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/validate-document")
+    public ResponseEntity<RetakeRequest> validateDocument(@PathVariable Long id) {
+        return ResponseEntity.ok(retakeRequestService.validateDocument(id));
+    }
+
+    @PatchMapping("/{id}/reject-document")
+    public ResponseEntity<RetakeRequest> rejectDocument(@PathVariable Long id,
+                                                         @RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(retakeRequestService.rejectDocument(id, body.get("reason")));
+    }
+
+    @PatchMapping(value = "/{id}/resubmit-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RetakeRequest> resubmitDocument(@PathVariable Long id,
+                                                           @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(retakeRequestService.resubmitDocument(id, file));
+    }
+
     @GetMapping("/attachments/{filename:.+}")
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
         try {
