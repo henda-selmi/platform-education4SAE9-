@@ -15,8 +15,7 @@ import java.util.List;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id;  // manually set to match auth-service user ID
 
     private String firstName;
     private String lastName;

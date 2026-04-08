@@ -19,4 +19,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     @EntityGraph(attributePaths = {"student"})
     List<Claim> findAll();
+
+    @EntityGraph(attributePaths = {"student"})
+    List<Claim> findByStudentId(Long studentId);
 }

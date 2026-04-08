@@ -6,7 +6,9 @@ import tn.english.school.claimservice.entity.Claim;
 import tn.english.school.claimservice.enums.ClaimStatus;
 import tn.english.school.claimservice.enums.ClaimType;
 import tn.english.school.claimservice.exception.DuplicateClaimException;
+import tn.english.school.claimservice.entity.User;
 import tn.english.school.claimservice.repository.ClaimRepository;
+import tn.english.school.claimservice.repository.UserRepository;
 
 import java.util.List;
 
@@ -15,8 +17,19 @@ import java.util.List;
 public class ClaimService {
 
     private final ClaimRepository claimRepository;
+    private final UserRepository userRepository;
 
     public Claim createClaim(Claim claim) {
+        // Upsert student so the local users table always reflects current auth-service data
+        if (claim.getStudent() != null && claim.getStudent().getId() != null) {
+            User incoming = claim.getStudent();
+            User student = userRepository.findById(incoming.getId()).orElseGet(User::new);
+            student.setId(incoming.getId());
+            if (incoming.getFirstName() != null) student.setFirstName(incoming.getFirstName());
+            if (incoming.getLastName()  != null) student.setLastName(incoming.getLastName());
+            if (incoming.getEmail()     != null) student.setEmail(incoming.getEmail());
+            claim.setStudent(userRepository.save(student));
+        }
         if (claim.getStudent() != null && claim.getStudent().getId() != null) {
             boolean isDuplicate = claimRepository.existsByStudentIdAndSubjectAndStatusIn(
                     claim.getStudent().getId(),
@@ -34,6 +47,10 @@ public class ClaimService {
 
     public List<Claim> getAllClaims() {
         return claimRepository.findAll();
+    }
+
+    public List<Claim> getClaimsByStudentId(Long studentId) {
+        return claimRepository.findByStudentId(studentId);
     }
 
     public Claim getClaimById(Long id) {
