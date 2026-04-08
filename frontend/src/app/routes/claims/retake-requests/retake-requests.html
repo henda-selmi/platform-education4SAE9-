@@ -1,0 +1,138 @@
+<page-header title="Retake Requests" subtitle="Review and manage student retake applications"></page-header>
+
+<!-- ─── Toolbar ─────────────────────────────────────────────────── -->
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+  <mat-form-field appearance="outline" style="flex:1;min-width:220px;max-width:380px;margin:0;">
+    <mat-icon matPrefix style="color:#9ca3af;font-size:18px;">search</mat-icon>
+    <mat-label>Search by exam or reason…</mat-label>
+    <input matInput [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()">
+    <button *ngIf="searchQuery" matSuffix mat-icon-button (click)="searchQuery=''; applyFilters()" style="color:#9ca3af;">
+      <mat-icon style="font-size:18px;">close</mat-icon>
+    </button>
+  </mat-form-field>
+</div>
+
+<!-- ─── Status filter chips ─────────────────────────────────────── -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
+  <ng-container *ngFor="let opt of statusOptions">
+    <button (click)="setStatus(opt.value)"
+            [ngStyle]="selectedStatus === opt.value
+              ? (opt.value === 'PENDING'  ? {background:'#d97706',color:'#fff',border:'1px solid #d97706'} :
+                 opt.value === 'APPROVED' ? {background:'#059669',color:'#fff',border:'1px solid #059669'} :
+                 opt.value === 'DENIED'   ? {background:'#dc2626',color:'#fff',border:'1px solid #dc2626'} :
+                                           {background:'#4f46e5',color:'#fff',border:'1px solid #4f46e5'})
+              : {background:'#fff',color:'#374151',border:'1px solid #e5e7eb'}"
+            style="padding:5px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;outline:none;transition:all .15s;">
+      {{ opt.label }}
+    </button>
+  </ng-container>
+
+  <button *ngIf="hasActiveFilters" (click)="clearFilters()"
+          style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;outline:none;display:inline-flex;align-items:center;gap:4px;">
+    <mat-icon style="font-size:14px;width:14px;height:14px;line-height:14px;">close</mat-icon>
+    Clear
+  </button>
+</div>
+
+<!-- ─── Table card ───────────────────────────────────────────────── -->
+<div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.05);overflow:hidden;">
+
+  <div *ngIf="loading" style="display:flex;justify-content:center;align-items:center;padding:64px;">
+    <mat-spinner diameter="44"></mat-spinner>
+  </div>
+
+  <table *ngIf="!loading" mat-table [dataSource]="dataSource" matSort style="width:100%;">
+
+    <!-- Course / Exam column -->
+    <ng-container matColumnDef="courseName">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header
+          style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
+        Exam / Course
+      </th>
+      <td mat-cell *matCellDef="let r" style="padding:16px 20px;border-bottom:1px solid #f8fafc;vertical-align:middle;">
+        <p style="font-size:14px;font-weight:600;color:#0f172a;margin:0 0 3px;">{{ r.courseName }}</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px;">
+          {{ r.reason }}
+        </p>
+      </td>
+    </ng-container>
+
+    <!-- Status column -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header
+          style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;padding:14px 16px;border-bottom:1px solid #f1f5f9;">
+        Status
+      </th>
+      <td mat-cell *matCellDef="let r" style="padding:16px;border-bottom:1px solid #f8fafc;">
+        <span [ngStyle]="statusStyle(r.status)"
+              style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;">
+          <ng-container [ngSwitch]="r.status">
+            <mat-icon *ngSwitchCase="'PENDING'"  style="font-size:13px;width:13px;height:13px;line-height:13px;">hourglass_empty</mat-icon>
+            <mat-icon *ngSwitchCase="'APPROVED'" style="font-size:13px;width:13px;height:13px;line-height:13px;">check_circle</mat-icon>
+            <mat-icon *ngSwitchCase="'DENIED'"   style="font-size:13px;width:13px;height:13px;line-height:13px;">cancel</mat-icon>
+          </ng-container>
+          {{ statusLabels[r.status] ?? r.status }}
+        </span>
+      </td>
+    </ng-container>
+
+    <!-- Date column -->
+    <ng-container matColumnDef="requestDate">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header
+          style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;padding:14px 16px;border-bottom:1px solid #f1f5f9;">
+        Submitted
+      </th>
+      <td mat-cell *matCellDef="let r" style="padding:16px;border-bottom:1px solid #f8fafc;">
+        <span style="font-size:13px;color:#64748b;">
+          {{ r.requestDate ? (r.requestDate | date:'mediumDate') : '—' }}
+        </span>
+      </td>
+    </ng-container>
+
+    <!-- Actions column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef
+          style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;padding:14px 20px;border-bottom:1px solid #f1f5f9;text-align:right;">
+      </th>
+      <td mat-cell *matCellDef="let r" style="padding:12px 20px;border-bottom:1px solid #f8fafc;text-align:right;white-space:nowrap;">
+        <ng-container *ngIf="isAdmin && r.status === 'PENDING'">
+          <button mat-flat-button (click)="updateStatus(r.id, 'APPROVED'); $event.stopPropagation()"
+                  style="background:#d1fae5;color:#059669;border-radius:7px;height:34px;font-size:12px;font-weight:600;margin-right:8px;box-shadow:none;">
+            <mat-icon style="font-size:16px;width:16px;height:16px;line-height:16px;">check</mat-icon>
+            Approve
+          </button>
+          <button mat-flat-button (click)="updateStatus(r.id, 'DENIED'); $event.stopPropagation()"
+                  style="background:#fee2e2;color:#dc2626;border-radius:7px;height:34px;font-size:12px;font-weight:600;box-shadow:none;">
+            <mat-icon style="font-size:16px;width:16px;height:16px;line-height:16px;">close</mat-icon>
+            Deny
+          </button>
+        </ng-container>
+        <span *ngIf="!isAdmin || r.status !== 'PENDING'" style="font-size:12px;color:#cbd5e1;">—</span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns" style="background:#f8fafc;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+        style="transition:background .1s;"
+        (mouseenter)="$any($event.currentTarget).style.background='#f8fafc'"
+        (mouseleave)="$any($event.currentTarget).style.background=''">
+    </tr>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td colspan="4" style="padding:56px 32px;text-align:center;">
+        <mat-icon style="font-size:40px;width:40px;height:40px;color:#e2e8f0;display:block;margin:0 auto 12px;">assignment</mat-icon>
+        <p style="font-size:14px;color:#94a3b8;margin:0 0 4px;font-weight:500;">No retake requests found</p>
+        <p style="font-size:13px;color:#cbd5e1;margin:0;">
+          {{ hasActiveFilters ? 'Try adjusting your search or filters.' : 'No requests have been submitted yet.' }}
+        </p>
+      </td>
+    </tr>
+  </table>
+
+  <mat-paginator *ngIf="!loading"
+                 [pageSizeOptions]="[5, 10, 25]"
+                 [pageSize]="10"
+                 showFirstLastButtons
+                 style="border-top:1px solid #f1f5f9;font-size:13px;">
+  </mat-paginator>
+</div>
