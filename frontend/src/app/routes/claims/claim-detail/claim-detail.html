@@ -1,0 +1,348 @@
+<page-header [title]="'Claim Details'" [subtitle]="claim?.subject || ''"></page-header>
+
+<!-- ─── Loading ─────────────────────────────────────────────────── -->
+<div *ngIf="loading" style="display:flex;justify-content:center;align-items:center;padding:80px 0;">
+  <mat-spinner diameter="48"></mat-spinner>
+</div>
+
+<!-- ─── Main content ─────────────────────────────────────────────── -->
+<div *ngIf="!loading && claim" style="display:flex;flex-direction:column;gap:20px;max-width:960px;margin:0 auto;padding-bottom:48px;">
+
+  <!-- Back -->
+  <div>
+    <button mat-button (click)="goBack()" style="color:#6b7280;margin-left:-8px;">
+      <mat-icon>arrow_back</mat-icon> Back to Claims
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       HERO CARD — Student (left) + Claim metadata (right)
+       ══════════════════════════════════════════════════════════════ -->
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.06);overflow:hidden;">
+
+    <!-- Thin status accent bar at top -->
+    <div [ngStyle]="{'background': statusStyle(claim.status)['color'], 'height': '4px', 'opacity': '0.85'}"></div>
+
+    <div style="padding:28px 32px;display:grid;grid-template-columns:auto 1px 1fr;gap:28px;align-items:start;">
+
+      <!-- ── Left: Student card ── -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;min-width:160px;padding-right:4px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(79,70,229,0.35);flex-shrink:0;">
+          <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;line-height:1;">{{ getStudentInitials() }}</span>
+        </div>
+        <div style="text-align:center;">
+          <p style="font-size:15px;font-weight:600;color:#111827;margin:0 0 4px;white-space:nowrap;">{{ getStudentFullName() }}</p>
+          <p *ngIf="claim.student?.email" style="font-size:12px;color:#6b7280;margin:0 0 3px;display:flex;align-items:center;justify-content:center;gap:3px;">
+            <mat-icon style="font-size:13px;width:13px;height:13px;line-height:13px;">mail_outline</mat-icon>
+            {{ claim.student!.email }}
+          </p>
+          <p style="font-size:12px;color:#9ca3af;margin:0;display:flex;align-items:center;justify-content:center;gap:3px;">
+            <mat-icon style="font-size:13px;width:13px;height:13px;line-height:13px;">badge</mat-icon>
+            Student #{{ claim.student?.id ?? '—' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ── Vertical divider ── -->
+      <div style="background:#f0f0f0;width:1px;height:100%;min-height:80px;"></div>
+
+      <!-- ── Right: Claim metadata ── -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+          <!-- Subject + badges -->
+          <div>
+            <p style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 5px;font-weight:500;">Claim #{{ claim.id }}</p>
+            <p style="font-size:21px;font-weight:700;color:#111827;margin:0 0 10px;line-height:1.3;">{{ claim.subject }}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span [ngStyle]="statusStyle(claim.status)"
+                    style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;line-height:1.8;">
+                {{ statusLabels[claim.status] ?? claim.status }}
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:500;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;line-height:1.8;">
+                <mat-icon style="font-size:13px;width:13px;height:13px;line-height:13px;">category</mat-icon>
+                {{ typeLabels[claim.type] ?? claim.type }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Date + admin action -->
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;">
+            <div style="text-align:right;">
+              <p style="font-size:10px;color:#9ca3af;margin:0;text-transform:uppercase;letter-spacing:0.5px;">Submitted</p>
+              <p style="font-size:13px;color:#374151;font-weight:500;margin:0;">{{ claim.createdAt | date:'mediumDate' }}</p>
+            </div>
+            <button *ngIf="isAdmin && (claim.status === 'OPEN' || claim.status === 'IN_PROGRESS') && claim.type === 'PEDAGOGICAL'"
+                    mat-flat-button
+                    (click)="authorizeRetake()"
+                    [disabled]="authorizing"
+                    style="background:#4f46e5;color:#fff;border-radius:8px;font-size:13px;font-weight:600;height:38px;">
+              <mat-spinner *ngIf="authorizing" diameter="16" style="display:inline-block;margin-right:6px;"></mat-spinner>
+              <mat-icon *ngIf="!authorizing" style="font-size:16px;margin-right:4px;">verified</mat-icon>
+              Authorize Retake
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       DESCRIPTION
+       ══════════════════════════════════════════════════════════════ -->
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.06);padding:26px 32px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:3px;height:18px;background:#4f46e5;border-radius:2px;"></div>
+      <p style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.7px;margin:0;">Description</p>
+    </div>
+    <p style="font-size:15px;color:#4b5563;line-height:1.75;white-space:pre-wrap;margin:0;">{{ claim.description }}</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       RETAKE FORM  (authorized, not yet submitted)
+       ══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="claim.status === 'RETAKE_AUTHORIZED' && claim.type === 'PEDAGOGICAL' && !claim.retakeRequest"
+       style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.06);overflow:hidden;">
+
+    <!-- Green header banner -->
+    <div style="background:linear-gradient(90deg,#065f46 0%,#059669 100%);padding:18px 32px;display:flex;align-items:center;gap:14px;">
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <mat-icon style="color:#fff;font-size:20px;">assignment</mat-icon>
+      </div>
+      <div>
+        <p style="color:#fff;font-size:15px;font-weight:600;margin:0;">Submit Your Retake Request</p>
+        <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:2px 0 0;">Your claim has been approved for a retake — complete the form below to proceed.</p>
+      </div>
+    </div>
+
+    <div style="padding:28px 32px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Row 1: Exam name + file upload side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+        <mat-form-field appearance="outline" style="width:100%;">
+          <mat-label>Exam / Course Name</mat-label>
+          <mat-icon matPrefix style="color:#9ca3af;font-size:20px;">school</mat-icon>
+          <input matInput [(ngModel)]="courseName" placeholder="e.g. Mathematics Final Exam">
+        </mat-form-field>
+
+        <div style="padding-top:4px;">
+          <p style="font-size:13px;font-weight:500;color:#374151;margin:0 0 8px;">
+            Supporting Document <span style="color:#ef4444;">*</span>
+          </p>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button mat-stroked-button type="button" onclick="this.nextElementSibling.click()"
+                    style="border-color:#d1d5db;color:#374151;border-radius:8px;font-size:13px;">
+              <mat-icon style="font-size:18px;">upload_file</mat-icon> Choose File
+            </button>
+            <input type="file" (change)="onFileSelected($event)" style="display:none" accept=".pdf,.png,.jpg,.jpeg">
+            <span *ngIf="selectedFile" style="font-size:13px;color:#059669;display:flex;align-items:center;gap:4px;">
+              <mat-icon style="font-size:16px;">check_circle</mat-icon>{{ selectedFile.name }}
+            </span>
+            <span *ngIf="!selectedFile" style="font-size:12px;color:#9ca3af;">PDF, PNG, JPG · max 10 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Reason textarea -->
+      <mat-form-field appearance="outline" style="width:100%;">
+        <mat-label>Reason / Justification</mat-label>
+        <mat-icon matPrefix style="color:#9ca3af;font-size:20px;">format_quote</mat-icon>
+        <textarea matInput [(ngModel)]="reason" rows="4"
+                  placeholder="Describe the circumstances that justify this retake request..."></textarea>
+      </mat-form-field>
+
+      <!-- Submit -->
+      <div style="display:flex;justify-content:flex-end;">
+        <button mat-flat-button (click)="submitRetake()" [disabled]="submitting"
+                style="background:#4f46e5;color:#fff;border-radius:8px;height:44px;padding:0 28px;font-size:14px;font-weight:600;letter-spacing:0.2px;">
+          <mat-spinner *ngIf="submitting" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
+          <mat-icon *ngIf="!submitting" style="font-size:18px;margin-right:4px;">send</mat-icon>
+          Submit Official Request
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       RETAKE APPLICATION CARD  (once submitted)
+       ══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="claim.retakeRequest"
+       style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.06);overflow:hidden;">
+
+    <!-- Dark gradient header -->
+    <div style="background:linear-gradient(135deg,#1e3a8a 0%,#312e81 60%,#1e1b4b 100%);padding:26px 32px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.15);">
+        <mat-icon style="color:#fff;font-size:28px;width:28px;height:28px;line-height:28px;">assignment_turned_in</mat-icon>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p style="color:rgba(255,255,255,0.55);font-size:11px;text-transform:uppercase;letter-spacing:1.2px;margin:0 0 3px;font-weight:500;">Retake Application</p>
+        <p style="color:#fff;font-size:19px;font-weight:700;margin:0 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ claim.retakeRequest.courseName }}</p>
+        <p style="color:rgba(255,255,255,0.5);font-size:12px;margin:0;">
+          Request #{{ claim.retakeRequest.id }}
+          <ng-container *ngIf="claim.retakeRequest.requestDate">
+            &nbsp;&middot;&nbsp;Submitted {{ claim.retakeRequest.requestDate | date:'mediumDate' }}
+          </ng-container>
+        </p>
+      </div>
+      <!-- Status badge in header -->
+      <div [ngStyle]="retakeStatusStyle(claim.retakeRequest.status)"
+           style="display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;letter-spacing:0.3px;flex-shrink:0;">
+        <ng-container [ngSwitch]="claim.retakeRequest.status">
+          <ng-container *ngSwitchCase="'PENDING'">
+            <mat-icon style="font-size:15px;width:15px;height:15px;line-height:15px;">hourglass_empty</mat-icon>
+            Pending Review
+          </ng-container>
+          <ng-container *ngSwitchCase="'APPROVED'">
+            <mat-icon style="font-size:15px;width:15px;height:15px;line-height:15px;">check_circle</mat-icon>
+            Approved
+          </ng-container>
+          <ng-container *ngSwitchCase="'DENIED'">
+            <mat-icon style="font-size:15px;width:15px;height:15px;line-height:15px;">cancel</mat-icon>
+            Denied
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <div style="padding:28px 32px;display:flex;flex-direction:column;gap:22px;">
+
+      <!-- ── Status alert bar ── -->
+      <div [ngSwitch]="claim.retakeRequest.status">
+        <div *ngSwitchCase="'PENDING'"
+             style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
+          <mat-icon style="color:#d97706;flex-shrink:0;margin-top:1px;">schedule</mat-icon>
+          <div>
+            <p style="font-size:13px;font-weight:600;color:#92400e;margin:0 0 3px;">Awaiting Administrative Review</p>
+            <p style="font-size:12px;color:#b45309;margin:0;line-height:1.5;">Your retake request has been received and is being reviewed. You will be notified as soon as a decision is made.</p>
+          </div>
+        </div>
+        <div *ngSwitchCase="'APPROVED'"
+             style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
+          <mat-icon style="color:#16a34a;flex-shrink:0;margin-top:1px;">task_alt</mat-icon>
+          <div>
+            <p style="font-size:13px;font-weight:600;color:#14532d;margin:0 0 3px;">Request Approved</p>
+            <p style="font-size:12px;color:#15803d;margin:0;line-height:1.5;">Your retake request has been officially approved. Please contact your instructor or academic coordinator to schedule your retake exam.</p>
+          </div>
+        </div>
+        <div *ngSwitchCase="'DENIED'"
+             style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
+          <mat-icon style="color:#dc2626;flex-shrink:0;margin-top:1px;">highlight_off</mat-icon>
+          <div>
+            <p style="font-size:13px;font-weight:600;color:#7f1d1d;margin:0 0 3px;">Request Denied</p>
+            <p style="font-size:12px;color:#b91c1c;margin:0;line-height:1.5;">Your retake request was not approved. Please contact your academic advisor to discuss alternative options or to appeal the decision.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Info tiles ── -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+            <div style="width:30px;height:30px;background:#ede9fe;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <mat-icon style="font-size:17px;width:17px;height:17px;color:#6d28d9;">school</mat-icon>
+            </div>
+            <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin:0;">Exam / Course</p>
+          </div>
+          <p style="font-size:14px;font-weight:600;color:#0f172a;margin:0;line-height:1.4;">{{ claim.retakeRequest.courseName }}</p>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+            <div style="width:30px;height:30px;background:#dbeafe;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <mat-icon style="font-size:17px;width:17px;height:17px;color:#2563eb;">event</mat-icon>
+            </div>
+            <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin:0;">Submitted On</p>
+          </div>
+          <p style="font-size:14px;font-weight:600;color:#0f172a;margin:0;">
+            {{ claim.retakeRequest.requestDate ? (claim.retakeRequest.requestDate | date:'mediumDate') : '—' }}
+          </p>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+            <div style="width:30px;height:30px;background:#fef3c7;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <mat-icon style="font-size:17px;width:17px;height:17px;color:#d97706;">tag</mat-icon>
+            </div>
+            <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin:0;">Request ID</p>
+          </div>
+          <p style="font-size:14px;font-weight:600;color:#0f172a;margin:0;">#{{ claim.retakeRequest.id }}</p>
+        </div>
+      </div>
+
+      <!-- ── Justification ── -->
+      <div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <div style="background:#f8fafc;padding:11px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+          <mat-icon style="font-size:17px;width:17px;color:#6b7280;">format_quote</mat-icon>
+          <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin:0;">Student Justification</p>
+        </div>
+        <div style="padding:18px 20px;background:#fff;">
+          <p style="font-size:14px;color:#374151;line-height:1.75;white-space:pre-wrap;margin:0;">{{ claim.retakeRequest.reason }}</p>
+        </div>
+      </div>
+
+      <!-- ── Document viewer ── -->
+      <div *ngIf="claim.retakeRequest.attachmentPath"
+           style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+
+        <!-- Toolbar -->
+        <div style="background:#f8fafc;padding:11px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <mat-icon style="font-size:20px;width:20px;flex-shrink:0;"
+                    [style.color]="isPdfAttachment(claim.retakeRequest.attachmentPath) ? '#ef4444' : '#2563eb'">
+            {{ isPdfAttachment(claim.retakeRequest.attachmentPath) ? 'picture_as_pdf' : 'image' }}
+          </mat-icon>
+          <p style="font-size:13px;font-weight:500;color:#374151;margin:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ getAttachmentFilename(claim.retakeRequest.attachmentPath) }}
+          </p>
+          <!-- Download -->
+          <button mat-flat-button
+                  (click)="downloadAttachment(claim.retakeRequest.attachmentPath)"
+                  style="background:#4f46e5;color:#fff;border-radius:6px;font-size:12px;font-weight:600;height:34px;line-height:34px;display:inline-flex;align-items:center;gap:5px;padding:0 14px;flex-shrink:0;">
+            <mat-icon style="font-size:16px;width:16px;height:16px;line-height:16px;">download</mat-icon>
+            Download
+          </button>
+          <!-- Open in new tab -->
+          <a [href]="getAttachmentUrl(claim.retakeRequest.attachmentPath)"
+             target="_blank"
+             mat-stroked-button
+             style="border-color:#d1d5db;color:#374151;border-radius:6px;font-size:12px;height:34px;line-height:34px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:0 12px;flex-shrink:0;">
+            <mat-icon style="font-size:16px;width:16px;height:16px;line-height:16px;">open_in_new</mat-icon>
+            Open
+          </a>
+        </div>
+
+        <!-- Image preview with dark viewer background -->
+        <div *ngIf="isImageAttachment(claim.retakeRequest.attachmentPath)"
+             style="background:#1a1a2e;padding:32px;display:flex;justify-content:center;align-items:center;min-height:280px;">
+          <img [src]="getAttachmentUrl(claim.retakeRequest.attachmentPath)"
+               alt="Supporting document preview"
+               style="max-width:100%;max-height:580px;border-radius:6px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.5);" />
+        </div>
+
+        <!-- PDF embedded viewer -->
+        <div *ngIf="isPdfAttachment(claim.retakeRequest.attachmentPath)">
+          <iframe [src]="safeAttachmentUrl(claim.retakeRequest.attachmentPath)"
+                  style="width:100%;height:660px;border:none;display:block;background:#525659;"
+                  title="PDF Document Viewer">
+          </iframe>
+        </div>
+
+        <!-- Other file types (no preview) -->
+        <div *ngIf="!isImageAttachment(claim.retakeRequest.attachmentPath) && !isPdfAttachment(claim.retakeRequest.attachmentPath)"
+             style="padding:48px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;background:#f8fafc;">
+          <mat-icon style="font-size:52px;width:52px;height:52px;line-height:52px;color:#d1d5db;">insert_drive_file</mat-icon>
+          <p style="font-size:14px;color:#6b7280;margin:0;">Preview not available for this file type.</p>
+          <button mat-flat-button
+                  (click)="downloadAttachment(claim.retakeRequest.attachmentPath)"
+                  style="background:#4f46e5;color:#fff;border-radius:8px;display:inline-flex;align-items:center;gap:6px;padding:0 20px;height:40px;font-weight:600;">
+            <mat-icon style="font-size:18px;">download</mat-icon>
+            Download File
+          </button>
+        </div>
+
+      </div>
+      <!-- end document viewer -->
+
+    </div>
+  </div>
+  <!-- end retake card -->
+
+</div>
