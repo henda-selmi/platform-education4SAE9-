@@ -27,12 +27,12 @@ public class JwtService {
 
         return Jwts.builder()
                 .header().type("JWT").and()
-                .subject(user.getEmail())
                 .claims(Map.of(
                         "id",   user.getId(),
                         "name", user.getFirstName() + " " + user.getLastName(),
                         "role", user.getRole().name()
                 ))
+                .subject(user.getEmail())
                 .issuedAt(new Date(nowMs))
                 .expiration(new Date(expMs))
                 .signWith(getKey())
