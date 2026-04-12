@@ -25,7 +25,7 @@ public class FileStorageService {
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath);
-            return filePath.toString();
+            return fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file: " + e.getMessage());
         }

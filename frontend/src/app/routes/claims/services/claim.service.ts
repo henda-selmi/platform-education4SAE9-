@@ -45,13 +45,13 @@ export class ClaimService {
   }
 
   getAttachmentUrl(attachmentPath: string): string {
-    const filename = attachmentPath.split('/').pop() || attachmentPath;
+    const filename = attachmentPath.split(/[/\\]/).pop() || attachmentPath;
     return `${this.retakeApi}/retake-requests/attachments/${encodeURIComponent(filename)}`;
   }
 
   downloadAttachment(attachmentPath: string) {
     const url = this.getAttachmentUrl(attachmentPath);
-    const filename = attachmentPath.split('/').pop() || attachmentPath;
+    const filename = attachmentPath.split(/[/\\]/).pop() || attachmentPath;
     this.http.get(url, { responseType: 'blob' }).subscribe((blob: Blob) => {
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');

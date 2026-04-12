@@ -207,7 +207,7 @@ export class ClaimDetailComponent implements OnInit {
   }
 
   getAttachmentFilename(attachmentPath: string): string {
-    return attachmentPath.split('/').pop() || attachmentPath;
+    return attachmentPath.split(/[/\\]/).pop() || attachmentPath;
   }
 
   downloadAttachment(attachmentPath: string) {
