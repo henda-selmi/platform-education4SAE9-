@@ -1,6 +1,19 @@
 # Dossier à ignorer spécifiquement
 other/
 
+# IDE
+.idea/
+
+# Playwright logs
+.playwright-mcp/
+
+# Uploads
+uploads/
+
+# ML models (generated at runtime)
+backend/ml-service/models/
+backend/ml-service/venv/
+
 # Frontend (Angular)
 frontend/node_modules/
 frontend/dist/
