@@ -16,13 +16,14 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeader } from '@shared';
 import { AuthService } from '@core/authentication';
-import { ClaimService } from '../claim.service';
-import { Claim } from '../claim.model';
-import { NewClaimDialog } from './new-claim-dialog';
+import { ClaimService } from '../services/claim.service';
+import { Claim } from '../models/claim.model';
+import { NewClaimDialogComponent } from './new-claim-dialog/new-claim-dialog.component';
 
 @Component({
   selector: 'app-claims-list',
-  templateUrl: './claims-list.html',
+  templateUrl: './claims-list.component.html',
+  styleUrl: './claims-list.component.scss',
   imports: [
     CommonModule,
     NgStyle,
@@ -40,10 +41,10 @@ import { NewClaimDialog } from './new-claim-dialog';
     MatTableModule,
     MatTooltipModule,
     PageHeader,
-    NewClaimDialog,
+    NewClaimDialogComponent,
   ],
 })
-export class ClaimsList implements OnInit, AfterViewInit {
+export class ClaimsListComponent implements OnInit, AfterViewInit {
   private readonly claimService = inject(ClaimService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
@@ -167,7 +168,7 @@ export class ClaimsList implements OnInit, AfterViewInit {
   }
 
   openNewClaimDialog() {
-    const ref = this.dialog.open(NewClaimDialog, { width: '520px' });
+    const ref = this.dialog.open(NewClaimDialogComponent, { width: '520px' });
     ref.afterClosed().subscribe(result => {
       if (result) this.loadClaims();
     });

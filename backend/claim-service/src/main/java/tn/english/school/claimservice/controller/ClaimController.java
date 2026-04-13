@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import tn.english.school.claimservice.entity.Claim;
 import tn.english.school.claimservice.enums.ClaimType;
 import tn.english.school.claimservice.service.ClaimService;
+import tn.english.school.claimservice.service.HuggingFaceService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/claims")
@@ -17,6 +19,7 @@ import java.util.List;
 public class ClaimController {
 
     private final ClaimService claimService;
+    private final HuggingFaceService huggingFaceService;
 
     @PostMapping
     public ResponseEntity<Claim> createClaim(@RequestBody Claim claim) {
@@ -63,5 +66,12 @@ public class ClaimController {
             @PathVariable Long claimId,
             @PathVariable Long retakeRequestId) {
         return ResponseEntity.ok(claimService.linkRetakeRequest(claimId, retakeRequestId));
+    }
+
+    @GetMapping("/{id}/draft-response")
+    public ResponseEntity<Map<String, String>> draftResponse(@PathVariable Long id) {
+        Claim claim = claimService.getClaimById(id);
+        String draft = huggingFaceService.draftAdminResponse(claim);
+        return ResponseEntity.ok(Map.of("draft", draft));
     }
 }

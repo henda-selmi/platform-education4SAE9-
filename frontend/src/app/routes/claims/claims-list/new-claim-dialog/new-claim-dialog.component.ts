@@ -9,43 +9,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { take } from 'rxjs';
-import { ClaimService } from '../claim.service';
+import { ClaimService } from '../../services/claim.service';
 import { AuthService, User } from '@core/authentication';
 
 @Component({
   selector: 'app-new-claim-dialog',
-  template: `
-    <h2 mat-dialog-title>Submit a New Claim</h2>
-    <mat-dialog-content class="flex flex-col gap-4 pt-2">
-      <mat-form-field class="w-full">
-        <mat-label>Subject</mat-label>
-        <input matInput [(ngModel)]="subject" placeholder="Brief summary of your claim">
-      </mat-form-field>
-
-      <mat-form-field class="w-full">
-        <mat-label>Type</mat-label>
-        <mat-select [(ngModel)]="type">
-          <mat-option value="TECHNICAL">Technical</mat-option>
-          <mat-option value="PEDAGOGICAL">Pedagogical</mat-option>
-          <mat-option value="ADMINISTRATIVE">Administrative</mat-option>
-          <mat-option value="OTHER">Other</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="w-full">
-        <mat-label>Description</mat-label>
-        <textarea matInput [(ngModel)]="description" rows="4" placeholder="Describe your issue in detail..."></textarea>
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-raised-button color="primary" (click)="submit()"
-              [disabled]="submitting || !subject || !type || !description || !currentUser?.id">
-        <mat-spinner *ngIf="submitting" diameter="18" style="display:inline-block;margin-right:6px;"></mat-spinner>
-        Submit
-      </button>
-    </mat-dialog-actions>
-  `,
+  templateUrl: './new-claim-dialog.component.html',
   imports: [
     CommonModule,
     FormsModule,
@@ -58,10 +27,10 @@ import { AuthService, User } from '@core/authentication';
     MatSnackBarModule,
   ],
 })
-export class NewClaimDialog implements OnInit {
+export class NewClaimDialogComponent implements OnInit {
   private readonly claimService = inject(ClaimService);
   private readonly authService = inject(AuthService);
-  private readonly dialogRef = inject(MatDialogRef<NewClaimDialog>);
+  private readonly dialogRef = inject(MatDialogRef<NewClaimDialogComponent>);
   private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);
 

@@ -420,10 +420,16 @@
       <div style="width:34px;height:34px;background:#ede9fe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <mat-icon style="font-size:18px;color:#6d28d9;">forum</mat-icon>
       </div>
-      <div>
+      <div style="flex:1;">
         <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">Conversation</p>
         <p style="font-size:12px;color:#94a3b8;margin:0;">{{ messages.length }} message{{ messages.length !== 1 ? 's' : '' }}</p>
       </div>
+      <button *ngIf="isAdmin" mat-stroked-button (click)="draftResponse()" [disabled]="drafting"
+              style="border-color:#7c3aed;color:#7c3aed;border-radius:8px;font-size:12px;font-weight:600;height:36px;display:inline-flex;align-items:center;gap:5px;padding:0 14px;flex-shrink:0;">
+        <mat-spinner *ngIf="drafting" diameter="14" style="display:inline-block;margin-right:4px;"></mat-spinner>
+        <mat-icon *ngIf="!drafting" style="font-size:16px;width:16px;height:16px;line-height:16px;">auto_awesome</mat-icon>
+        {{ drafting ? 'Drafting...' : 'Draft response' }}
+      </button>
     </div>
 
     <!-- Messages thread -->

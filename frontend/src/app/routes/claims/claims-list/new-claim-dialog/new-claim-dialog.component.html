@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>Submit a New Claim</h2>
+<mat-dialog-content class="flex flex-col gap-4 pt-2">
+  <mat-form-field class="w-full">
+    <mat-label>Subject</mat-label>
+    <input matInput [(ngModel)]="subject" placeholder="Brief summary of your claim">
+  </mat-form-field>
+
+  <mat-form-field class="w-full">
+    <mat-label>Type</mat-label>
+    <mat-select [(ngModel)]="type">
+      <mat-option value="TECHNICAL">Technical</mat-option>
+      <mat-option value="PEDAGOGICAL">Pedagogical</mat-option>
+      <mat-option value="ADMINISTRATIVE">Administrative</mat-option>
+      <mat-option value="OTHER">Other</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field class="w-full">
+    <mat-label>Description</mat-label>
+    <textarea matInput [(ngModel)]="description" rows="4" placeholder="Describe your issue in detail..."></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" (click)="submit()"
+          [disabled]="submitting || !subject || !type || !description || !currentUser?.id">
+    <mat-spinner *ngIf="submitting" diameter="18" style="display:inline-block;margin-right:6px;"></mat-spinner>
+    Submit
+  </button>
+</mat-dialog-actions>
