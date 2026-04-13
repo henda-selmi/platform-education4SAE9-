@@ -1,0 +1,62 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+
+  cloud:
+    gateway:
+      # Global CORS — allows the React frontend to call the gateway
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+      routes:
+        # ── Auth Service (port 8083) ──────────────────────────────────────────
+        - id: auth-service
+          uri: http://auth-service:8083
+          predicates:
+            - Path=/auth/**, /user/**, /api/students/**
+
+        # ── Claim Service (port 8081) ─────────────────────────────────────────
+        - id: claim-service
+          uri: http://claim-service:8081
+          predicates:
+            - Path=/api/claims/**
+
+        # ── Retake Service (port 8082) ────────────────────────────────────────
+        - id: retake-service
+          uri: http://retake-service:8082
+          predicates:
+            - Path=/api/retake-requests/**
+
+        # ── ML Service (Python FastAPI, port 5000) ────────────────────────────
+        # /api/ml/predict  →  http://ml-service:5000/predict
+        # /api/ml/cluster  →  http://ml-service:5000/cluster
+        # /api/ml/analyze  →  http://ml-service:5000/analyze
+        - id: ml-service
+          uri: http://ml-service:5000
+          predicates:
+            - Path=/api/ml/**
+          filters:
+            - StripPrefix=2
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
