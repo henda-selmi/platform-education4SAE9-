@@ -22,7 +22,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/retake-requests")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class RetakeRequestController {
 
