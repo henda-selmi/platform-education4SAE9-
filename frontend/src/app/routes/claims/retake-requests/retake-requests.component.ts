@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeader } from '@shared';
 import { AuthService } from '@core/authentication';
 import { ClaimService } from '../services/claim.service';
+import { MlService, MlAnalysis } from '../services/ml.service';
 import { RetakeRequest } from '../models/claim.model';
 
 @Component({
@@ -41,18 +42,24 @@ import { RetakeRequest } from '../models/claim.model';
 })
 export class RetakeRequestsComponent implements OnInit, AfterViewInit {
   private readonly claimService = inject(ClaimService);
+  private readonly mlService = inject(MlService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly authService = inject(AuthService);
 
   isAdmin = false;
 
+  /** studentId → ML analysis result */
+  mlAnalyses = new Map<number, MlAnalysis>();
+  /** studentId → loading state */
+  mlLoading = new Map<number, boolean>();
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   dataSource = new MatTableDataSource<RetakeRequest>();
   loading = true;
-  displayedColumns = ['courseName', 'status', 'requestDate', 'actions'];
+  displayedColumns = ['courseName', 'mlAnalysis', 'status', 'requestDate', 'actions'];
 
   searchQuery = '';
   selectedStatus = '';
@@ -102,12 +109,46 @@ export class RetakeRequestsComponent implements OnInit, AfterViewInit {
           this.dataSource.paginator = this.paginator;
           this.dataSource.sort = this.sort;
         });
+        if (this.isAdmin) {
+          this.loadMlAnalyses(data);
+        }
       },
       error: () => {
         this.loading = false;
         this.cdr.markForCheck();
       },
     });
+  }
+
+  loadMlAnalyses(requests: RetakeRequest[]) {
+    const studentIds = [...new Set(
+      requests
+        .filter(r => r.studentId != null)
+        .map(r => r.studentId as number)
+    )];
+
+    for (const studentId of studentIds) {
+      this.mlLoading.set(studentId, true);
+      this.mlService.analyzeStudent(studentId).subscribe({
+        next: result => {
+          this.mlAnalyses.set(studentId, result);
+          this.mlLoading.set(studentId, false);
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.mlLoading.set(studentId, false);
+          this.cdr.markForCheck();
+        },
+      });
+    }
+  }
+
+  getMlAnalysis(studentId?: number): MlAnalysis | undefined {
+    return studentId != null ? this.mlAnalyses.get(studentId) : undefined;
+  }
+
+  isMlLoading(studentId?: number): boolean {
+    return studentId != null ? (this.mlLoading.get(studentId) ?? false) : false;
   }
 
   applyFilters() {

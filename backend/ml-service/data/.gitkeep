@@ -1,0 +1,4 @@
+# Place student-mat.csv here (UCI Student Performance Dataset)
+# Download from: https://archive.ics.uci.edu/dataset/320/student+performance
+# The file uses semicolon (;) as separator.
+# Without this file, the service will use synthetic data automatically.
