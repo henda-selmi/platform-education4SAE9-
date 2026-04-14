@@ -57,6 +57,7 @@ class ClaimServiceTest {
 
     @Test
     void createClaim_success() {
+        claim.setStatus(null); // verify the service sets OPEN
         when(userRepository.findById(1L)).thenReturn(Optional.of(student));
         when(userRepository.save(any(User.class))).thenReturn(student);
         when(claimRepository.existsByStudentIdAndSubjectAndStatusIn(1L, "Exam contestation",
@@ -75,7 +76,7 @@ class ClaimServiceTest {
     @Test
     void authorizeRetake_success() {
         when(claimRepository.findById(1L)).thenReturn(Optional.of(claim));
-        when(claimRepository.save(any(Claim.class))).thenReturn(claim);
+        when(claimRepository.save(any(Claim.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Claim result = claimService.authorizeRetake(1L);
 
