@@ -30,9 +30,8 @@ export function errorInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn)
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      const isAuthRequest = req.url.includes('/user') || req.url.includes('/auth/');
-      if ((error.status === STATUS.UNAUTHORIZED || error.status === STATUS.FORBIDDEN) && isAuthRequest) {
-        // Invalid / expired token on an auth endpoint — clear it and go to login
+      if (error.status === STATUS.UNAUTHORIZED || error.status === STATUS.FORBIDDEN) {
+        // Token invalide ou expiré — clear et redirect login pour tous les endpoints
         tokenService.clear();
         router.navigateByUrl('/auth/login');
       } else if (errorPages.includes(error.status)) {
