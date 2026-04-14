@@ -10,7 +10,6 @@ import tn.english.school.claimservice.entity.Claim;
 import tn.english.school.claimservice.entity.User;
 import tn.english.school.claimservice.enums.ClaimStatus;
 import tn.english.school.claimservice.enums.ClaimType;
-import tn.english.school.claimservice.exception.DuplicateClaimException;
 import tn.english.school.claimservice.repository.ClaimRepository;
 import tn.english.school.claimservice.repository.UserRepository;
 
