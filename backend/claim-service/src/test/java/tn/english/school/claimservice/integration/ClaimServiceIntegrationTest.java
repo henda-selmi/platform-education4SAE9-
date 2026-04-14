@@ -11,6 +11,7 @@ import tn.english.school.claimservice.entity.User;
 import tn.english.school.claimservice.enums.ClaimStatus;
 import tn.english.school.claimservice.enums.ClaimType;
 import tn.english.school.claimservice.exception.DuplicateClaimException;
+import tn.english.school.claimservice.repository.ClaimRepository;
 import tn.english.school.claimservice.repository.UserRepository;
 import tn.english.school.claimservice.service.ClaimService;
 
@@ -23,6 +24,9 @@ class ClaimServiceIntegrationTest {
 
     @Autowired
     private ClaimService claimService;
+
+    @Autowired
+    private ClaimRepository claimRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -47,8 +51,11 @@ class ClaimServiceIntegrationTest {
 
         Claim saved = claimService.createClaim(claim);
 
-        assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getStatus()).isEqualTo(ClaimStatus.OPEN);
+        // Re-fetch from DB to verify real persistence (not just session cache)
+        Claim fromDb = claimRepository.findById(saved.getId())
+                .orElseThrow(() -> new AssertionError("Claim not found in DB"));
+        assertThat(fromDb.getId()).isNotNull();
+        assertThat(fromDb.getStatus()).isEqualTo(ClaimStatus.OPEN);
     }
 
     // ── Anti-doublon persisté ─────────────────────────────────────────────────
@@ -57,6 +64,8 @@ class ClaimServiceIntegrationTest {
     void createClaim_duplicate_throwsDuplicateClaimException() {
         Claim first = buildClaim("Physics exam", ClaimType.PEDAGOGICAL);
         claimService.createClaim(first);
+        // Flush to DB so the duplicate check hits the real table, not the session cache
+        claimRepository.flush();
 
         Claim duplicate = buildClaim("Physics exam", ClaimType.PEDAGOGICAL);
 
