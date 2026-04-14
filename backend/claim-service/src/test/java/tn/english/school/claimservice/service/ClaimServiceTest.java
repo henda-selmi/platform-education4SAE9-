@@ -141,7 +141,7 @@ class ClaimServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Action denied");
 
-        verify(claimRepository, never()).deleteById(any());
+        verify(claimRepository, never()).deleteById(any(Long.class));
     }
 
     // ── authorizeRetake — cas d'erreur ────────────────────────────────────────
@@ -161,6 +161,7 @@ class ClaimServiceTest {
     @Test
     void authorizeRetake_alreadyResolved_throwsIllegalStateException() {
         claim.setStatus(ClaimStatus.RESOLVED);
+        claim.setType(ClaimType.PEDAGOGICAL); // explicit: type guard must pass first
         when(claimRepository.findById(1L)).thenReturn(Optional.of(claim));
 
         assertThatThrownBy(() -> claimService.authorizeRetake(1L))
@@ -173,6 +174,7 @@ class ClaimServiceTest {
     @Test
     void authorizeRetake_alreadyCanceled_throwsIllegalStateException() {
         claim.setStatus(ClaimStatus.CANCELED);
+        claim.setType(ClaimType.PEDAGOGICAL); // explicit: type guard must pass first
         when(claimRepository.findById(1L)).thenReturn(Optional.of(claim));
 
         assertThatThrownBy(() -> claimService.authorizeRetake(1L))
